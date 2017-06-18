@@ -139,8 +139,8 @@ int tcp_search_line(char *output_buffer, const char *sock_addrs, const char *lin
 
     sprintf(current_sock_addrs, "%s<->%s", local_addr, rem_addr);
 
-    //printf("%s\n", current_sock_addrs);
-    //printf("%s\n", sock_addrs);
+    printf("%s\n", current_sock_addrs);
+    printf("%s\n", sock_addrs);
     if (strcmp(current_sock_addrs, sock_addrs) == 0) {
         user_info = getpwuid(uid);
         sprintf(output_buffer, "%s", user_info->pw_name);
@@ -152,28 +152,36 @@ int tcp_search_line(char *output_buffer, const char *sock_addrs, const char *lin
 /*
  * Parse the /net/proc/tcp file line and search for the given socket addresses.
  *
- * @param FILE *fp                  - file handle to be searched
+ * @param const char *fp            - path to /net/proc/tcp
  * @param char *output_buffer       - address of string to store result
  * @param int buffer_size           - address of string to store result
  * @param const char *sock_addrs    - local and remote socket addresses
  *      to search for. (e.g. "172.31.23.18:9200<->172.31.23.18:49212")
  *
  * @return int  - 0 on success, 1 on failure, 2 on error
+ *
+ * @NOTE: Reopens the tcp file on each call.
+ *        This is probably inefficient on a per request basis and should be optimized.
  */
-int tcp_search_proc(FILE *fp, char *output_buffer, int buffer_size, const char *sock_addrs) {
+int tcp_search_proc(const char *fp, char *output_buffer, int buffer_size, const char *sock_addrs) {
     int found = 0;
     char * line = NULL;
     size_t len = 0;
     ssize_t read;
+    FILE *ifp;
 
     // Nullify the output buffer.
     memset(output_buffer, 0, buffer_size);
 
-    // Reposition file pointer to first byte of the file.
-    rewind(fp);
+    // Open file for reading.
+    ifp = fopen(fp, "r");
+    if (ifp == NULL) {
+        fprintf(stderr, "tcp_search_proc: Can't open input file %s!\n", fp);
+        return 1;
+    }
 
-    read = getline(&line, &len, fp); // skip first line of file
-    while ((read = getline(&line, &len, fp)) != -1) {
+    read = getline(&line, &len, ifp); // skip first line of file
+    while ((read = getline(&line, &len, ifp)) != -1) {
         found = tcp_search_line(output_buffer, sock_addrs, line);
         if (found == 0 || found == 2)
             break;
