@@ -139,8 +139,8 @@ int tcp_search_line(char *output_buffer, const char *sock_addrs, const char *lin
 
     sprintf(current_sock_addrs, "%s<->%s", local_addr, rem_addr);
 
-    printf("%s\n", current_sock_addrs);
-    printf("%s\n", sock_addrs);
+    //printf("%s\n", current_sock_addrs);
+    //printf("%s\n", sock_addrs);
     if (strcmp(current_sock_addrs, sock_addrs) == 0) {
         user_info = getpwuid(uid);
         sprintf(output_buffer, "%s", user_info->pw_name);
